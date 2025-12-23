@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ShoppingBag, Anchor, Sun, Heart, Trash2, ExternalLink, ArrowLeft, Filter, MapPin, Navigation, X, Info, CalendarCheck } from 'lucide-react';
+import { ShoppingBag, Anchor, Sun, Heart, Trash2, ExternalLink, ArrowLeft, Filter, MapPin, Navigation, X, Info, CalendarCheck, Loader2 } from 'lucide-react';
 
 /**
- * CONFIGURATION & MOCK DATA
+ * CONFIGURATION
  */
 
 const BRAND_COLOR = '#34a4b8';
+const WP_API_URL = 'https://cruisytravel.com/wp-json/wp/v2/sandbar_trip?_embed&per_page=100';
 
-// Categories
+// Categories (Must match your WordPress "Vibe" slugs exactly!)
 const CATEGORIES = [
   { id: 'private', label: 'Private Charter', icon: '🛥️' }, 
   { id: 'group', label: 'Social / Group', icon: '🎉' },
@@ -17,71 +18,6 @@ const CATEGORIES = [
   { id: 'eco', label: 'Eco / Kayak', icon: '🛶' }, 
   { id: 'dog_friendly', label: 'Dog Friendly', icon: '🐾' },
   { id: 'luxury', label: 'Luxury', icon: '💎' },
-];
-
-// Mock Data representing Sandbar Trips
-// TODO: Replace this with a fetch call to your WP API when ready
-const SANDBAR_TRIPS = [
-  {
-    id: 1,
-    title: "The Ultimate Chill: Private Snipe Point Charter",
-    price: 850,
-    priceType: 'per boat',
-    duration: '4 Hours',
-    tags: ['private', 'luxury', 'dog_friendly'],
-    image: "https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?auto=format&fit=crop&q=80&w=800",
-    description: "Escape the crowds. A completely private captained boat taking you to the crystal clear waters of Snipe Point. Includes floating mats and cooler.",
-    longDescription: "Experience the ultimate in privacy and luxury. Our captains know the secret spots at Snipe Point where the water is waist-deep and crystal clear. We provide a premium cooler with ice, high-end floating mats, and Bluetooth audio. Perfect for families or couples wanting to escape the party crowd.",
-    affiliateLink: "#"
-  },
-  {
-    id: 2,
-    title: "Party Barge Sandbar Hopping",
-    price: 89,
-    priceType: 'per person',
-    duration: '3.5 Hours',
-    tags: ['group', 'sunset'],
-    image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=800",
-    description: "Make new friends on this large catamaran. Music, drinks included, and waist-deep water at the famous Boca Grande sandbar.",
-    longDescription: "Ready to party? Climb aboard our spacious catamaran designed for fun. We head straight to Boca Grande, where the vibe is high energy. Ticket includes draft beer, wine, and soft drinks. We supply water toys and snorkel gear if you want to explore the edges of the sandbar.",
-    affiliateLink: "#"
-  },
-  {
-    id: 3,
-    title: "Bare It All: Clothing Optional Private Charter",
-    price: 700,
-    priceType: 'per boat',
-    duration: '4 Hours',
-    tags: ['private', 'clothing_optional', 'adults_only'],
-    image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800",
-    description: "Discreet, professional captain taking you to secluded sandbars where you can get an all-over tan. Freedom at its finest.",
-    longDescription: "For those who prefer no tan lines. Our captains are discreet professionals who will take you to 'nude-friendly' zones near Snipe Point or Mud Keys. Enjoy total freedom in nature. The boat is equipped with a Bimini top for shade when you need it.",
-    affiliateLink: "#"
-  },
-  {
-    id: 4,
-    title: "Pontoon Rental: Be Your Own Captain",
-    price: 350,
-    priceType: 'half day',
-    duration: '4 Hours',
-    tags: ['rental', 'group', 'dog_friendly'],
-    image: "https://images.unsplash.com/photo-1564676404880-925700b0d879?auto=format&fit=crop&q=80&w=800",
-    description: "We give you the map and the boat. Navigate to Mud Keys or Snipe Point on your own schedule. Experience required.",
-    longDescription: "Take control of your adventure! Our 24ft Pontoon boats are reliable and spacious. We provide a GPS plotter with tracks to the local sandbars. You must have boating experience to rent. Fuel is extra. Maximum 10 passengers.",
-    affiliateLink: "#"
-  },
-  {
-    id: 5,
-    title: "Eco-Kayak & Sandbar Combo",
-    price: 120,
-    priceType: 'per person',
-    duration: '5 Hours',
-    tags: ['eco', 'group', 'active'],
-    image: "https://images.unsplash.com/photo-1541295780514-417122a7f053?auto=format&fit=crop&q=80&w=800",
-    description: "Kayak through the mangroves first, then relax on a pristine sandbar. The best of both worlds for nature lovers.",
-    longDescription: "Start with a guided kayak tour through the winding mangrove tunnels of Key West's backcountry. Spot herons, rays, and sharks. Then, we beach the kayaks on a secluded sandbar for an hour of relaxation and swimming. Snacks and water included.",
-    affiliateLink: "#"
-  }
 ];
 
 // Amazon Affiliate Essentials
@@ -95,6 +31,11 @@ export default function App() {
   // State for View Management (Home vs Saved)
   const [currentView, setCurrentView] = useState('home'); 
 
+  // State for Data
+  const [sandbarTrips, setSandbarTrips] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   // State for Filters
   const [selectedCategories, setSelectedCategories] = useState([]);
   
@@ -107,6 +48,60 @@ export default function App() {
   // State for Details Modal
   const [selectedTripForDetails, setSelectedTripForDetails] = useState(null);
 
+  // Fetch Data from WordPress
+  useEffect(() => {
+    const fetchTrips = async () => {
+      try {
+        const response = await fetch(WP_API_URL);
+        if (!response.ok) throw new Error('Failed to fetch trips');
+        
+        const data = await response.json();
+        
+        // Transform WP Data to App Format
+        const formattedTrips = data.map(trip => {
+          // Extract Tags (Vibes)
+          const tags = [];
+          if (trip._embedded && trip._embedded['wp:term']) {
+             trip._embedded['wp:term'].forEach(termList => {
+                termList.forEach(term => {
+                   if (term.taxonomy === 'trip_vibe') {
+                      tags.push(term.slug);
+                   }
+                });
+             });
+          }
+
+          // Extract Image
+          const image = trip._embedded && trip._embedded['wp:featuredmedia'] 
+             ? trip._embedded['wp:featuredmedia'][0].source_url 
+             : 'https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?auto=format&fit=crop&q=80&w=800'; // Fallback
+
+          return {
+            id: trip.id,
+            title: trip.title.rendered,
+            price: trip.acf?.price || '0',
+            priceType: trip.acf?.price_type || '',
+            duration: trip.acf?.duration || '',
+            tags: tags,
+            image: image,
+            description: trip.acf?.short_description || 'No description available.',
+            longDescription: trip.acf?.long_description || trip.acf?.short_description,
+            affiliateLink: trip.acf?.affiliate_link || '#'
+          };
+        });
+
+        setSandbarTrips(formattedTrips);
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Error fetching trips:", err);
+        setError("Could not load trips. Please try again later.");
+        setIsLoading(false);
+      }
+    };
+
+    fetchTrips();
+  }, []);
+
   // Persist Favorites
   useEffect(() => {
     localStorage.setItem('cruisy_saved_trips', JSON.stringify(savedTripIds));
@@ -114,11 +109,11 @@ export default function App() {
 
   // Filter Logic
   const filteredTrips = useMemo(() => {
-    if (selectedCategories.length === 0) return SANDBAR_TRIPS;
-    return SANDBAR_TRIPS.filter(trip => 
+    if (selectedCategories.length === 0) return sandbarTrips;
+    return sandbarTrips.filter(trip => 
       trip.tags.some(tag => selectedCategories.includes(tag))
     );
-  }, [selectedCategories]);
+  }, [selectedCategories, sandbarTrips]);
 
   // Toggle Category Helper
   const toggleCategory = (catId) => {
@@ -139,7 +134,7 @@ export default function App() {
     );
   };
 
-  const savedTripsData = SANDBAR_TRIPS.filter(t => savedTripIds.includes(t.id));
+  const savedTripsData = sandbarTrips.filter(t => savedTripIds.includes(t.id));
 
   // Modal Component
   const DetailsModal = ({ trip, onClose }) => {
@@ -154,7 +149,7 @@ export default function App() {
           <div className="h-64 relative">
              <img src={trip.image} alt={trip.title} className="w-full h-full object-cover" />
              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-20">
-                <h3 className="font-russo text-2xl text-white">{trip.title}</h3>
+                <h3 className="font-russo text-2xl text-white drop-shadow-md" dangerouslySetInnerHTML={{ __html: trip.title }} />
              </div>
           </div>
 
@@ -180,8 +175,8 @@ export default function App() {
 
             <div>
               <h4 className="font-russo text-lg mb-2">About this Trip</h4>
-              <p className="text-gray-600 leading-relaxed">
-                {trip.longDescription || trip.description}
+              <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                {trip.longDescription}
               </p>
             </div>
 
@@ -358,83 +353,105 @@ export default function App() {
              <h3 className="font-russo text-2xl text-gray-800">
                {selectedCategories.length > 0 ? 'Matched Trips' : 'All Adventures'}
                <span className="ml-3 text-sm font-roboto font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full align-middle">
-                 {filteredTrips.length} Results
+                 {isLoading ? 'Loading...' : `${filteredTrips.length} Results`}
                </span>
              </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-             {filteredTrips.map(trip => (
-               <div key={trip.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col overflow-hidden group">
-                 <div className="relative h-48 overflow-hidden cursor-pointer" onClick={() => setSelectedTripForDetails(trip)}>
-                   <img 
-                     src={trip.image} 
-                     alt={trip.title} 
-                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                   />
-                   <button 
-                     onClick={(e) => toggleSave(trip.id, e)}
-                     className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition z-10"
-                   >
-                     <Heart 
-                       size={20} 
-                       className={savedTripIds.includes(trip.id) ? "fill-red-500 text-red-500" : "text-gray-400 hover:text-red-400"} 
-                     />
-                   </button>
-                   {trip.tags.includes('luxury') && (
-                     <span className="absolute top-3 left-3 bg-slate-900 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                       Luxury
-                     </span>
-                   )}
-                 </div>
-                 
-                 <div className="p-5 flex-1 flex flex-col">
-                   <div className="flex flex-wrap gap-2 mb-3">
-                     {trip.tags.slice(0,3).map(tag => (
-                       <span key={tag} className="text-xs font-medium text-cyan-600 bg-cyan-50 px-2 py-1 rounded">
-                          {tag.replace('_', ' ')}
-                       </span>
-                     ))}
-                   </div>
-                   
-                   <h4 className="font-russo text-xl text-gray-800 mb-2 leading-snug flex-1 cursor-pointer hover:text-cyan-600 transition" onClick={() => setSelectedTripForDetails(trip)}>
-                     {trip.title}
-                   </h4>
-                   
-                   <p className="text-gray-500 text-sm mb-4 line-clamp-2">
-                     {trip.description}
-                   </p>
+          {/* LOADING STATE */}
+          {isLoading && (
+            <div className="flex flex-col items-center justify-center py-20">
+               <Loader2 className="w-12 h-12 brand-text animate-spin mb-4" />
+               <p className="text-gray-500 font-russo text-lg">Loading your adventures...</p>
+            </div>
+          )}
 
-                   <div className="mt-auto pt-4 border-t border-gray-100">
-                      <div className="mb-3">
-                         <div className="text-xs text-gray-400 font-medium uppercase tracking-wide">Starting at</div>
-                         <div className="font-russo text-xl brand-text">
-                           ${trip.price} <span className="text-sm text-gray-500 font-roboto font-normal">/ {trip.priceType}</span>
-                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                           onClick={() => setSelectedTripForDetails(trip)}
-                           className="flex-1 bg-gray-100 text-gray-700 px-3 py-2.5 rounded-lg font-bold hover:bg-gray-200 transition text-sm flex items-center justify-center gap-1"
-                        >
-                          <Info size={16} /> Details
-                        </button>
-                        <a 
-                          href={trip.affiliateLink}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex-1 brand-bg text-white px-3 py-2.5 rounded-lg font-bold shadow-md hover:brightness-110 transition text-sm flex items-center justify-center text-center gap-1"
-                        >
-                          <CalendarCheck size={16} /> Book Now
-                        </a>
-                      </div>
-                   </div>
-                 </div>
-               </div>
-             ))}
-          </div>
+          {/* ERROR STATE */}
+          {error && (
+            <div className="bg-red-50 text-red-500 p-8 rounded-xl text-center border border-red-100">
+               <h3 className="font-bold text-lg mb-2">Oops!</h3>
+               <p>{error}</p>
+            </div>
+          )}
 
-          {filteredTrips.length === 0 && (
+          {/* SUCCESS GRID */}
+          {!isLoading && !error && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredTrips.map(trip => (
+                <div key={trip.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col overflow-hidden group">
+                  <div className="relative h-48 overflow-hidden cursor-pointer" onClick={() => setSelectedTripForDetails(trip)}>
+                    <img 
+                      src={trip.image} 
+                      alt={trip.title} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <button 
+                      onClick={(e) => toggleSave(trip.id, e)}
+                      className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition z-10"
+                    >
+                      <Heart 
+                        size={20} 
+                        className={savedTripIds.includes(trip.id) ? "fill-red-500 text-red-500" : "text-gray-400 hover:text-red-400"} 
+                      />
+                    </button>
+                    {trip.tags.includes('luxury') && (
+                      <span className="absolute top-3 left-3 bg-slate-900 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                        Luxury
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="p-5 flex-1 flex flex-col">
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {trip.tags.slice(0,3).map(tag => (
+                        <span key={tag} className="text-xs font-medium text-cyan-600 bg-cyan-50 px-2 py-1 rounded">
+                            {tag.replace('_', ' ')}
+                        </span>
+                      ))}
+                    </div>
+                    
+                    {/* Use dangerouslySetInnerHTML to handle HTML entities like &amp; in WP titles */}
+                    <h4 
+                      className="font-russo text-xl text-gray-800 mb-2 leading-snug flex-1 cursor-pointer hover:text-cyan-600 transition" 
+                      onClick={() => setSelectedTripForDetails(trip)}
+                      dangerouslySetInnerHTML={{ __html: trip.title }}
+                    />
+                    
+                    <p className="text-gray-500 text-sm mb-4 line-clamp-2">
+                      {trip.description}
+                    </p>
+
+                    <div className="mt-auto pt-4 border-t border-gray-100">
+                        <div className="mb-3">
+                          <div className="text-xs text-gray-400 font-medium uppercase tracking-wide">Starting at</div>
+                          <div className="font-russo text-xl brand-text">
+                            ${trip.price} <span className="text-sm text-gray-500 font-roboto font-normal">/ {trip.priceType}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setSelectedTripForDetails(trip)}
+                            className="flex-1 bg-gray-100 text-gray-700 px-3 py-2.5 rounded-lg font-bold hover:bg-gray-200 transition text-sm flex items-center justify-center gap-1"
+                          >
+                            <Info size={16} /> Details
+                          </button>
+                          <a 
+                            href={trip.affiliateLink}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex-1 brand-bg text-white px-3 py-2.5 rounded-lg font-bold shadow-md hover:brightness-110 transition text-sm flex items-center justify-center text-center gap-1"
+                          >
+                            <CalendarCheck size={16} /> Book Now
+                          </a>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!isLoading && !error && filteredTrips.length === 0 && (
             <div className="bg-white rounded-xl p-12 text-center border-dashed border-2 border-gray-200 mt-6">
                <div className="text-4xl mb-4">⚓️</div>
                <h3 className="font-russo text-xl text-gray-800 mb-2">No trips match that exact combo</h3>
@@ -521,7 +538,7 @@ export default function App() {
                              <div className="flex items-center gap-4 cursor-pointer" onClick={() => setSelectedTripForDetails(trip)}>
                                <img src={trip.image} className="w-16 h-16 rounded-lg object-cover shadow-sm" alt="" />
                                <div>
-                                 <div className="font-bold text-gray-800 text-lg">{trip.title}</div>
+                                 <div className="font-bold text-gray-800 text-lg" dangerouslySetInnerHTML={{ __html: trip.title }} />
                                  <div className="flex gap-2 mt-1">
                                     {trip.tags.slice(0,2).map(tag => (
                                       <span key={tag} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded uppercase">{tag.replace('_', ' ')}</span>
