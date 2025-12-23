@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ShoppingBag, Anchor, Sun, Heart, Trash2, ExternalLink, ArrowLeft, Filter, MapPin, Navigation, X, Info, CalendarCheck, Loader2 } from 'lucide-react';
+import { ShoppingBag, Anchor, Sun, Heart, Trash2, ExternalLink, ArrowLeft, Filter, MapPin, Navigation, X, Info, CalendarCheck, Loader2, ArrowRight } from 'lucide-react';
 
 /**
  * CONFIGURATION
@@ -9,7 +9,10 @@ const BRAND_COLOR = '#34a4b8';
 const WP_TRIPS_API_URL = 'https://cruisytravel.com/wp-json/wp/v2/sandbar_trip?_embed&per_page=100';
 
 // UPDATED: Now pointing to the generic "amazon_essential" CPT
-const WP_ESSENTIALS_API_URL = 'https://cruisytravel.com/wp-json/wp/v2/amazon_essential?_embed&per_page=20';
+const WP_ESSENTIALS_API_URL = 'https://cruisytravel.com/wp-json/wp/v2/amazon_essential?_embed&per_page=6'; // Limit API to 6 to keep it fast
+
+// YOUR AMAZON STOREFRONT URL (Replace this!)
+const AMAZON_STOREFRONT_URL = 'https://amzn.to/4qswW40';
 
 // Categories (Must match your WordPress "Vibe" slugs exactly!)
 const CATEGORIES = [
@@ -524,6 +527,18 @@ export default function App() {
                    {isLoading ? 'Loading essentials...' : 'No essentials found.'}
                 </div>
               )}
+              
+              {/* VIEW FULL LIST BUTTON */}
+              <div className="mt-8 text-center">
+                 <a 
+                   href={AMAZON_STOREFRONT_URL} 
+                   target="_blank" 
+                   rel="sponsored noopener noreferrer" 
+                   className="inline-flex items-center gap-2 bg-white text-gray-600 border border-gray-200 px-6 py-3 rounded-full font-bold hover:bg-gray-50 hover:text-orange-500 hover:border-orange-200 transition shadow-sm"
+                 >
+                    View More Sandbar Essentials <ArrowRight size={18} />
+                 </a>
+              </div>
           </div>
 
         </div>
