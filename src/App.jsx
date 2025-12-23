@@ -6,7 +6,10 @@ import { ShoppingBag, Anchor, Sun, Heart, Trash2, ExternalLink, ArrowLeft, Filte
  */
 
 const BRAND_COLOR = '#34a4b8';
-const WP_API_URL = 'https://cruisytravel.com/wp-json/wp/v2/sandbar_trip?_embed&per_page=100';
+const WP_TRIPS_API_URL = 'https://cruisytravel.com/wp-json/wp/v2/sandbar_trip?_embed&per_page=100';
+
+// UPDATED: Now pointing to the generic "amazon_essential" CPT
+const WP_ESSENTIALS_API_URL = 'https://cruisytravel.com/wp-json/wp/v2/amazon_essential?_embed&per_page=20';
 
 // Categories (Must match your WordPress "Vibe" slugs exactly!)
 const CATEGORIES = [
@@ -20,19 +23,13 @@ const CATEGORIES = [
   { id: 'luxury', label: 'Luxury', icon: '💎' },
 ];
 
-// Amazon Affiliate Essentials
-const ESSENTIALS = [
-  { id: 101, name: "Reef Safe Sunscreen", price: "$15.99", img: "https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&q=80&w=200", link: "#" },
-  { id: 102, name: "Waterproof Phone Pouch", price: "$9.99", img: "https://images.unsplash.com/photo-1605396653303-a292419f9664?auto=format&fit=crop&q=80&w=200", link: "#" },
-  { id: 103, name: "Floating Drink Holder", price: "$24.99", img: "https://images.unsplash.com/photo-1597816157597-90c7438e8e7a?auto=format&fit=crop&q=80&w=200", link: "#" },
-];
-
 export default function App() {
   // State for View Management (Home vs Saved)
   const [currentView, setCurrentView] = useState('home'); 
 
   // State for Data
   const [sandbarTrips, setSandbarTrips] = useState([]);
+  const [essentials, setEssentials] = useState([]); 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -50,15 +47,21 @@ export default function App() {
 
   // Fetch Data from WordPress
   useEffect(() => {
-    const fetchTrips = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(WP_API_URL);
-        if (!response.ok) throw new Error('Failed to fetch trips');
+        // 1. Fetch Trips
+        const tripsResponse = await fetch(WP_TRIPS_API_URL);
         
-        const data = await response.json();
+        // 2. Fetch Essentials
+        const essentialsResponse = await fetch(WP_ESSENTIALS_API_URL);
+
+        if (!tripsResponse.ok) throw new Error('Failed to fetch trips');
         
-        // Transform WP Data to App Format
-        const formattedTrips = data.map(trip => {
+        const tripsData = await tripsResponse.json();
+        const essentialsData = essentialsResponse.ok ? await essentialsResponse.json() : [];
+        
+        // --- Transform Trips Data ---
+        const formattedTrips = tripsData.map(trip => {
           // Extract Tags (Vibes)
           const tags = [];
           if (trip._embedded && trip._embedded['wp:term']) {
@@ -90,16 +93,32 @@ export default function App() {
           };
         });
 
+        // --- Transform Essentials Data ---
+        const formattedEssentials = essentialsData.map(item => {
+           const image = item._embedded && item._embedded['wp:featuredmedia'] 
+             ? item._embedded['wp:featuredmedia'][0].source_url 
+             : 'https://via.placeholder.com/150';
+
+           return {
+             id: item.id,
+             name: item.title.rendered,
+             price: item.acf?.price || '',
+             link: item.acf?.affiliate_link || '#',
+             img: image
+           };
+        });
+
         setSandbarTrips(formattedTrips);
+        setEssentials(formattedEssentials);
         setIsLoading(false);
       } catch (err) {
-        console.error("Error fetching trips:", err);
+        console.error("Error fetching data:", err);
         setError("Could not load trips. Please try again later.");
         setIsLoading(false);
       }
     };
 
-    fetchTrips();
+    fetchData();
   }, []);
 
   // Persist Favorites
@@ -477,27 +496,34 @@ export default function App() {
                  </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {ESSENTIALS.map(item => (
-                    <div key={item.id} className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-lg transition flex flex-col">
-                        <div className="flex items-center gap-4 mb-4">
-                           <img src={item.img} alt={item.name} className="w-20 h-20 rounded-xl bg-gray-100 object-cover" />
-                           <div>
-                              <div className="font-bold text-gray-800 text-lg leading-tight">{item.name}</div>
-                              <div className="text-sm text-gray-500 mt-1">{item.price}</div>
-                           </div>
-                        </div>
-                        <a 
-                          href={item.link} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="mt-auto w-full bg-orange-500 text-white py-2.5 rounded-xl font-bold text-center hover:bg-orange-600 transition shadow-md shadow-orange-200"
-                        >
-                           View on Amazon
-                        </a>
-                    </div>
-                  ))}
-              </div>
+              {essentials.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {essentials.map(item => (
+                      <div key={item.id} className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-lg transition flex flex-col">
+                          <div className="flex items-center gap-4 mb-4">
+                             <img src={item.img} alt={item.name} className="w-20 h-20 rounded-xl bg-gray-100 object-cover" />
+                             <div>
+                                <div className="font-bold text-gray-800 text-lg leading-tight" dangerouslySetInnerHTML={{ __html: item.name }} />
+                                <div className="text-sm text-gray-500 mt-1">{item.price}</div>
+                             </div>
+                          </div>
+                          {/* UPDATED LINK ATTRIBUTES FOR SEO/AFFILIATE COMPLIANCE */}
+                          <a 
+                            href={item.link} 
+                            target="_blank" 
+                            rel="sponsored noopener noreferrer" 
+                            className="mt-auto w-full bg-orange-500 text-white py-2.5 rounded-xl font-bold text-center hover:bg-orange-600 transition shadow-md shadow-orange-200"
+                          >
+                             View on Amazon
+                          </a>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                   {isLoading ? 'Loading essentials...' : 'No essentials found.'}
+                </div>
+              )}
           </div>
 
         </div>
