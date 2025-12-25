@@ -8,10 +8,10 @@ import { ShoppingBag, Anchor, Sun, Heart, Trash2, ExternalLink, ArrowLeft, Filte
 const BRAND_COLOR = '#34a4b8';
 const WP_TRIPS_API_URL = 'https://cruisytravel.com/wp-json/wp/v2/sandbar_trip?_embed&per_page=100';
 
-// UPDATED: Now pointing to the generic "amazon_essential" CPT
-const WP_ESSENTIALS_API_URL = 'https://cruisytravel.com/wp-json/wp/v2/amazon_essential?_embed&per_page=6'; // Limit API to 6 to keep it fast
+// Generic "amazon_essential" CPT
+const WP_ESSENTIALS_API_URL = 'https://cruisytravel.com/wp-json/wp/v2/amazon_essential?_embed&per_page=6'; 
 
-// YOUR AMAZON STOREFRONT URL (Replace this!)
+// YOUR AMAZON STOREFRONT URL
 const AMAZON_STOREFRONT_URL = 'https://amzn.to/4qswW40';
 
 // Categories (Must match your WordPress "Vibe" slugs exactly!)
@@ -227,7 +227,7 @@ export default function App() {
                 
                 {/* Affiliate Transparency Disclaimer */}
                 <p className="text-[10px] text-gray-400 text-center leading-tight">
-                   Transparency: Cruisy Travel may earn a small commission if you book through these links, at no extra cost to you. This helps us keep the sandbar guides free and up to date!
+                   Transparency: Cruisy Travel may earn a small commission if you book through these links, at no extra cost to you. This allows us to keep our trip planning and concierge services free for you!
                 </p>
             </div>
           </div>
@@ -324,7 +324,7 @@ export default function App() {
             {/* COL 2: TOOLS & FILTERS */}
             <div className="lg:col-span-7 flex flex-col h-full">
                
-               {/* Filters Panel - Now taking full height of this column */}
+               {/* Filters Panel */}
                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col justify-center">
                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-2">
                     <div>
@@ -332,7 +332,6 @@ export default function App() {
                         <Filter className="w-5 h-5 brand-text" />
                         <h3 className="font-russo text-lg text-gray-800">What's your vibe?</h3>
                         </div>
-                        {/* Prompt Instructions */}
                         <p className="text-xs text-gray-400 mt-1 ml-7">
                             Tap a category below to filter the list
                         </p>
@@ -416,9 +415,16 @@ export default function App() {
                         className={savedTripIds.includes(trip.id) ? "fill-red-500 text-red-500" : "text-gray-400 hover:text-red-400"} 
                       />
                     </button>
+                    {/* LUXURY BADGE */}
                     {trip.tags.includes('luxury') && (
                       <span className="absolute top-3 left-3 bg-slate-900 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                         Luxury
+                      </span>
+                    )}
+                    {/* ADULTS ONLY BADGE (If trip has 'adults_only' tag) */}
+                    {trip.tags.includes('adults_only') && (
+                      <span className={`absolute top-3 ${trip.tags.includes('luxury') ? 'left-24' : 'left-3'} bg-black text-amber-400 border border-amber-400/50 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md`}>
+                        18+ Adults Only
                       </span>
                     )}
                   </div>
@@ -432,7 +438,6 @@ export default function App() {
                       ))}
                     </div>
                     
-                    {/* Use dangerouslySetInnerHTML to handle HTML entities like &amp; in WP titles */}
                     <h4 
                       className="font-russo text-xl text-gray-800 mb-2 leading-snug flex-1 cursor-pointer hover:text-cyan-600 transition" 
                       onClick={() => setSelectedTripForDetails(trip)}
@@ -488,7 +493,7 @@ export default function App() {
           )}
 
           {/* LARGE ESSENTIALS SECTION (Bottom) */}
-          <div className="mt-16 bg-gradient-to-br from-orange-50 to-amber-50 rounded-3xl p-8 border border-orange-100">
+          <div className="mt-16 bg-gradient-to-br from-orange-50 to-amber-50 rounded-3xl p-8 border border-orange-100 pb-12">
               <div className="flex items-center gap-3 mb-6">
                  <div className="p-2 bg-orange-100 rounded-lg">
                     <Sun className="w-8 h-8 text-orange-500" />
@@ -510,7 +515,6 @@ export default function App() {
                                 <div className="text-sm text-gray-500 mt-1">{item.price}</div>
                              </div>
                           </div>
-                          {/* UPDATED LINK ATTRIBUTES FOR SEO/AFFILIATE COMPLIANCE */}
                           <a 
                             href={item.link} 
                             target="_blank" 
@@ -528,8 +532,15 @@ export default function App() {
                 </div>
               )}
               
+              {/* DISCLAIMER - Repositioned and Styled to Ensure Visibility */}
+              <div className="mt-8 pt-4 border-t border-orange-100">
+                <p className="text-xs text-gray-500 text-center max-w-3xl mx-auto leading-relaxed italic">
+                   Transparency: As an Amazon Associate, Cruisy Travel earns from qualifying purchases at no extra cost to you. This helps support our free trip planning and concierge services!
+                </p>
+              </div>
+
               {/* VIEW FULL LIST BUTTON */}
-              <div className="mt-8 text-center">
+              <div className="mt-6 text-center">
                  <a 
                    href={AMAZON_STOREFRONT_URL} 
                    target="_blank" 
