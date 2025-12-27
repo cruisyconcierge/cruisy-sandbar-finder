@@ -299,6 +299,11 @@ export default function App() {
       {currentView === 'home' ? (
         <div className="max-w-7xl mx-auto px-4 py-8">
           
+          {/* MOBILE BACK LINK (Visible ONLY on Mobile) */}
+          <a href="https://cruisytravel.com" className="md:hidden inline-flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-cyan-600 mb-4 uppercase tracking-wide transition">
+             <ArrowLeft size={14} /> Back to Cruisytravel.com
+          </a>
+
           {/* DASHBOARD TOP SECTION */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
             
@@ -311,7 +316,7 @@ export default function App() {
                />
                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
                
-               <div className="absolute bottom-0 left-0 p-8">
+               <div className="absolute bottom-0 left-0 p-8 w-full">
                  <h2 className="font-russo text-3xl md:text-4xl text-white leading-tight shadow-sm drop-shadow-md mb-3">
                    Find Your Perfect <br/><span className="text-cyan-300">Key West Sandbar</span>
                  </h2>
@@ -324,7 +329,7 @@ export default function App() {
             {/* COL 2: TOOLS & FILTERS */}
             <div className="lg:col-span-7 flex flex-col h-full">
                
-               {/* Filters Panel */}
+               {/* Filters Panel - Now taking full height of this column */}
                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col justify-center">
                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-2">
                     <div>
@@ -332,6 +337,7 @@ export default function App() {
                         <Filter className="w-5 h-5 brand-text" />
                         <h3 className="font-russo text-lg text-gray-800">What's your vibe?</h3>
                         </div>
+                        {/* Prompt Instructions */}
                         <p className="text-xs text-gray-400 mt-1 ml-7">
                             Tap a category below to filter the list
                         </p>
@@ -397,85 +403,94 @@ export default function App() {
 
           {/* SUCCESS GRID */}
           {!isLoading && !error && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTrips.map(trip => (
-                <div key={trip.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col overflow-hidden group">
-                  <div className="relative h-48 overflow-hidden cursor-pointer" onClick={() => setSelectedTripForDetails(trip)}>
-                    <img 
-                      src={trip.image} 
-                      alt={trip.title} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <button 
-                      onClick={(e) => toggleSave(trip.id, e)}
-                      className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition z-10"
-                    >
-                      <Heart 
-                        size={20} 
-                        className={savedTripIds.includes(trip.id) ? "fill-red-500 text-red-500" : "text-gray-400 hover:text-red-400"} 
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredTrips.map(trip => (
+                  <div key={trip.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col overflow-hidden group">
+                    <div className="relative h-48 overflow-hidden cursor-pointer" onClick={() => setSelectedTripForDetails(trip)}>
+                      <img 
+                        src={trip.image} 
+                        alt={trip.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                    </button>
-                    {/* LUXURY BADGE */}
-                    {trip.tags.includes('luxury') && (
-                      <span className="absolute top-3 left-3 bg-slate-900 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                        Luxury
-                      </span>
-                    )}
-                    {/* ADULTS ONLY BADGE (If trip has 'adults_only' tag) */}
-                    {trip.tags.includes('adults_only') && (
-                      <span className={`absolute top-3 ${trip.tags.includes('luxury') ? 'left-24' : 'left-3'} bg-black text-amber-400 border border-amber-400/50 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md`}>
-                        18+ Adults Only
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="p-5 flex-1 flex flex-col">
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {trip.tags.slice(0,3).map(tag => (
-                        <span key={tag} className="text-xs font-medium text-cyan-600 bg-cyan-50 px-2 py-1 rounded">
-                            {tag.replace('_', ' ')}
+                      <button 
+                        onClick={(e) => toggleSave(trip.id, e)}
+                        className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition z-10"
+                      >
+                        <Heart 
+                          size={20} 
+                          className={savedTripIds.includes(trip.id) ? "fill-red-500 text-red-500" : "text-gray-400 hover:text-red-400"} 
+                        />
+                      </button>
+                      {/* LUXURY BADGE */}
+                      {trip.tags.includes('luxury') && (
+                        <span className="absolute top-3 left-3 bg-slate-900 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                          Luxury
                         </span>
-                      ))}
+                      )}
+                      {/* ADULTS ONLY BADGE (If trip has 'adults_only' tag) */}
+                      {trip.tags.includes('adults_only') && (
+                        <span className={`absolute top-3 ${trip.tags.includes('luxury') ? 'left-24' : 'left-3'} bg-black text-amber-400 border border-amber-400/50 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md`}>
+                          18+ Adults Only
+                        </span>
+                      )}
                     </div>
                     
-                    <h4 
-                      className="font-russo text-xl text-gray-800 mb-2 leading-snug flex-1 cursor-pointer hover:text-cyan-600 transition" 
-                      onClick={() => setSelectedTripForDetails(trip)}
-                      dangerouslySetInnerHTML={{ __html: trip.title }}
-                    />
-                    
-                    <p className="text-gray-500 text-sm mb-4 line-clamp-2">
-                      {trip.description}
-                    </p>
+                    <div className="p-5 flex-1 flex flex-col">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {trip.tags.slice(0,3).map(tag => (
+                          <span key={tag} className="text-xs font-medium text-cyan-600 bg-cyan-50 px-2 py-1 rounded">
+                              {tag.replace('_', ' ')}
+                          </span>
+                        ))}
+                      </div>
+                      
+                      {/* Use dangerouslySetInnerHTML to handle HTML entities like &amp; in WP titles */}
+                      <h4 
+                        className="font-russo text-xl text-gray-800 mb-2 leading-snug flex-1 cursor-pointer hover:text-cyan-600 transition" 
+                        onClick={() => setSelectedTripForDetails(trip)}
+                        dangerouslySetInnerHTML={{ __html: trip.title }}
+                      />
+                      
+                      <p className="text-gray-500 text-sm mb-4 line-clamp-2">
+                        {trip.description}
+                      </p>
 
-                    <div className="mt-auto pt-4 border-t border-gray-100">
-                        <div className="mb-3">
-                          <div className="text-xs text-gray-400 font-medium uppercase tracking-wide">Starting at</div>
-                          <div className="font-russo text-xl brand-text">
-                            ${trip.price} <span className="text-sm text-gray-500 font-roboto font-normal">/ {trip.priceType}</span>
+                      <div className="mt-auto pt-4 border-t border-gray-100">
+                          <div className="mb-3">
+                            <div className="text-xs text-gray-400 font-medium uppercase tracking-wide">Starting at</div>
+                            <div className="font-russo text-xl brand-text">
+                              ${trip.price} <span className="text-sm text-gray-500 font-roboto font-normal">/ {trip.priceType}</span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setSelectedTripForDetails(trip)}
-                            className="flex-1 bg-gray-100 text-gray-700 px-3 py-2.5 rounded-lg font-bold hover:bg-gray-200 transition text-sm flex items-center justify-center gap-1"
-                          >
-                            <Info size={16} /> Details
-                          </button>
-                          <a 
-                            href={trip.affiliateLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex-1 brand-bg text-white px-3 py-2.5 rounded-lg font-bold shadow-md hover:brightness-110 transition text-sm flex items-center justify-center text-center gap-1"
-                          >
-                            <CalendarCheck size={16} /> Book Now
-                          </a>
-                        </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setSelectedTripForDetails(trip)}
+                              className="flex-1 bg-gray-100 text-gray-700 px-3 py-2.5 rounded-lg font-bold hover:bg-gray-200 transition text-sm flex items-center justify-center gap-1"
+                            >
+                              <Info size={16} /> Details
+                            </button>
+                            <a 
+                              href={trip.affiliateLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex-1 brand-bg text-white px-3 py-2.5 rounded-lg font-bold shadow-md hover:brightness-110 transition text-sm flex items-center justify-center text-center gap-1"
+                            >
+                              <CalendarCheck size={16} /> Book Now
+                            </a>
+                          </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              {/* SHORT TRANSPARENCY DISCLAIMER (For Results) */}
+              <div className="mt-8 mb-4">
+                <p className="text-[10px] text-gray-400 text-center italic">
+                  Transparency: Cruisy Travel may earn a commission from bookings made through these links at no extra cost to you.
+                </p>
+              </div>
+            </>
           )}
 
           {!isLoading && !error && filteredTrips.length === 0 && (
@@ -515,6 +530,7 @@ export default function App() {
                                 <div className="text-sm text-gray-500 mt-1">{item.price}</div>
                              </div>
                           </div>
+                          {/* UPDATED LINK ATTRIBUTES FOR SEO/AFFILIATE COMPLIANCE */}
                           <a 
                             href={item.link} 
                             target="_blank" 
