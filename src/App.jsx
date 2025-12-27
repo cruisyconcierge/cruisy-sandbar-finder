@@ -288,8 +288,8 @@ export default function App() {
       {currentView === 'home' ? (
         <div className="max-w-7xl mx-auto px-4 py-8">
           
-          {/* MOBILE BACK LINK (Visible ONLY on Mobile) */}
-          <a href="https://cruisytravel.com" className="md:hidden inline-flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-cyan-600 mb-4 uppercase tracking-wide transition">
+          {/* BACK LINK */}
+          <a href="https://cruisytravel.com/key-west/" className="inline-flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-cyan-600 mb-4 uppercase tracking-wide transition">
              <ArrowLeft size={14} /> Back to Cruisytravel.com
           </a>
 
@@ -321,11 +321,6 @@ export default function App() {
                {/* Filters Panel - Now taking full height of this column */}
                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col justify-center relative">
                  
-                 {/* DESKTOP BACK LINK (Absolute Top Right) */}
-                 <a href="https://cruisytravel.com" className="hidden md:inline-flex absolute top-6 right-6 items-center gap-1 text-[10px] font-bold text-gray-400 hover:text-cyan-600 uppercase tracking-wide transition">
-                   <ArrowLeft size={10} /> Back to Cruisytravel.com
-                 </a>
-
                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-2">
                     <div>
                         <div className="flex items-center gap-2">
